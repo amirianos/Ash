@@ -10,7 +10,7 @@ import (
 )
 
 // TODO LIST
-// 1 - add config file list bashrc file for bash
+// 1 - add config file like bashrc file for bash
 // 3 - fix real time out put problem . ex ping 8.8.8.8
 // 3 - A lot of things :)
 
@@ -35,7 +35,6 @@ func main() {
 			break
 		}
 		cmd_spilited_string := strings.Split(cmd_string, " ")
-		//test := []string{"hello","test","amir"}
 		cmd_first_part := cmd_spilited_string[0]
 		cmd_second_part := cmd_spilited_string[1:]
 		if cmd_first_part == "cd" {
@@ -43,8 +42,6 @@ func main() {
 			continue
 		}
 		cmd := exec.Command(cmd_first_part, cmd_second_part...)
-		// cmd.Dir = string(working_directory_path)
-		//err = os.Chdir(string(working_directory_path))
 		std_out, err := cmd.Output()
 		if err != nil {
 			fmt.Println(err.Error())
