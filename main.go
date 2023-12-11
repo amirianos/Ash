@@ -2,26 +2,25 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 // TODO LIST
 // 1 - add config file like bashrc file for bash
-// 3 - fix real time out put problem . ex ping 8.8.8.8
+// 2 - fix real time out put problem . ex ping 8.8.8.8 => fixed
 // 3 - A lot of things :)
+// 4 - fix ctrl + c exit problem
 
 func main() {
-	working_directory_cmd := exec.Command("pwd")
-	working_directory_path, err := working_directory_cmd.Output()
-	if err != nil {
-		fmt.Println("I cant get working directory from OS")
-		fmt.Println(err.Error())
-	}
-	fmt.Println("i am here and path is", string(working_directory_path))
+
 	for {
 		fmt.Print("$ ")
 		Reader := bufio.NewReader(os.Stdin)
@@ -42,11 +41,32 @@ func main() {
 			continue
 		}
 		cmd := exec.Command(cmd_first_part, cmd_second_part...)
-		std_out, err := cmd.Output()
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+		go func() {
+			<-sigCh
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill() // Kill the command process
+
+			}
+		}()
+
+		var stdoutBuf, stderrBuf bytes.Buffer
+		cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+		cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+
+		err = cmd.Run()
+
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(err)
 		}
-		fmt.Print(string(std_out))
+		outStr, errStr := string(stdoutBuf.Bytes()), string(stderrBuf.Bytes())
+		if errStr == "" {
+			fmt.Errorf(errStr)
+		}
+		_ = outStr
 
 	}
 }
